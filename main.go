@@ -15,11 +15,11 @@ const (
 )
 
 type Parcel struct {
-	Number    int
-	Client    int
-	Status    string
-	Address   string
-	CreatedAt string
+	Number     int
+	Client     int
+	Status     string
+	Address    string
+	Created_At string
 }
 
 type ParcelService struct {
@@ -32,10 +32,10 @@ func NewParcelService(store ParcelStore) ParcelService {
 
 func (s ParcelService) Register(client int, address string) (Parcel, error) {
 	parcel := Parcel{
-		Client:    client,
-		Status:    ParcelStatusRegistered,
-		Address:   address,
-		CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		Client:     client,
+		Status:     ParcelStatusRegistered,
+		Address:    address,
+		Created_At: time.Now().UTC().Format(time.RFC3339),
 	}
 
 	id, err := s.store.Add(parcel)
@@ -46,7 +46,7 @@ func (s ParcelService) Register(client int, address string) (Parcel, error) {
 	parcel.Number = id
 
 	fmt.Printf("Новая посылка № %d на адрес %s от клиента с идентификатором %d зарегистрирована %s\n",
-		parcel.Number, parcel.Address, parcel.Client, parcel.CreatedAt)
+		parcel.Number, parcel.Address, parcel.Client, parcel.Created_At)
 
 	return parcel, nil
 }
@@ -60,7 +60,7 @@ func (s ParcelService) PrintClientParcels(client int) error {
 	fmt.Printf("Посылки клиента %d:\n", client)
 	for _, parcel := range parcels {
 		fmt.Printf("Посылка № %d на адрес %s от клиента с идентификатором %d зарегистрирована %s, статус %s\n",
-			parcel.Number, parcel.Address, parcel.Client, parcel.CreatedAt, parcel.Status)
+			parcel.Number, parcel.Address, parcel.Client, parcel.Created_At, parcel.Status)
 	}
 	fmt.Println()
 
@@ -102,9 +102,9 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	defer db.Close()
+	defer db.Close() // настройте подключение к БД
 
-	store := NewParcelStore(db)
+	store := NewParcelStore(db) // создайте объект ParcelStore функцией NewParcelStore
 	service := NewParcelService(store)
 
 	// регистрация посылки
@@ -146,7 +146,7 @@ func main() {
 	}
 
 	// вывод посылок клиента
-	// предыдущая посылка не должна удалиться, так как её статус «НЕ «зарегистрирована»
+	// предыдущая посылка не должна удалиться, т.к. её статус НЕ «зарегистрирована»
 	err = service.PrintClientParcels(client)
 	if err != nil {
 		fmt.Println(err)
@@ -168,7 +168,7 @@ func main() {
 	}
 
 	// вывод посылок клиента
-	// здесь не должно быть последней посылки, так как она должна была успешно удалиться
+	// здесь не должно быть последней посылки, т.к. она должна была успешно удалиться
 	err = service.PrintClientParcels(client)
 	if err != nil {
 		fmt.Println(err)

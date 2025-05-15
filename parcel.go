@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+
+	_ "modernc.org/sqlite"
 )
 
 type ParcelStore struct {
@@ -13,11 +15,9 @@ func NewParcelStore(db *sql.DB) ParcelStore {
 }
 
 func (s ParcelStore) Add(p Parcel) (int, error) {
-	res, err := s.db.Exec("INSERT INTO parcel (client, status, address, created_at) VALUES (:client, :status, :address, :created_at)",
-		sql.Named("client", p.Client),
-		sql.Named("status", p.Status),
-		sql.Named("address", p.Address),
-		sql.Named("created_at", p.CreatedAt))
+	// реализуйте добавление строки в таблицу parcel, используйте данные из переменной p
+	query := "INSERT INTO parcel (client, address, status, created_at) VALUES (?, ?, ?, ?)"
+	res, err := s.db.Exec(query, p.Client, p.Address, p.Status, p.Created_At)
 	if err != nil {
 		return 0, err
 	}
@@ -31,38 +31,39 @@ func (s ParcelStore) Add(p Parcel) (int, error) {
 }
 
 func (s ParcelStore) Get(number int) (Parcel, error) {
-	p := Parcel{}
-
-	row := s.db.QueryRow("SELECT number, client, status, address, created_at FROM parcel WHERE number = :number",
-		sql.Named("number", number))
-	err := row.Scan(&p.Number, &p.Client, &p.Status, &p.Address, &p.CreatedAt)
+	// реализуйте чтение строки по заданному number
+	// здесь из таблицы должна вернуться только одна строка
+	var p Parcel
+	err := s.db.QueryRow("SELECT number, client, address, status, created_at FROM parcel WHERE number = ?", number).
+		Scan(&p.Number, &p.Client, &p.Address, &p.Status, &p.Created_At)
 	if err != nil {
-		return p, err
+		return Parcel{}, err
 	}
 
 	return p, nil
 }
 
 func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
-	rows, err := s.db.Query("SELECT number, client, status, address, created_at FROM parcel WHERE client = :client",
-		sql.Named("client", client))
+	// реализуйте чтение строк из таблицы parcel по заданному client
+	// здесь из таблицы может вернуться несколько строк
+	rows, err := s.db.Query("SELECT number, client, address, status, created_at FROM parcel WHERE client = ?", client)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
+	// заполните срез Parcel данными из таблицы
 	var res []Parcel
 	for rows.Next() {
-		p := Parcel{}
-
-		err := rows.Scan(&p.Number, &p.Client, &p.Status, &p.Address, &p.CreatedAt)
+		var p Parcel
+		err := rows.Scan(&p.Number, &p.Client, &p.Address, &p.Status, &p.Created_At)
 		if err != nil {
 			return nil, err
 		}
-
 		res = append(res, p)
 	}
 
+	// Проверяем, не возникло ли ошибок при итерации
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -71,26 +72,31 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 }
 
 func (s ParcelStore) SetStatus(number int, status string) error {
-	_, err := s.db.Exec("UPDATE parcel SET status = :status WHERE number = :number",
-		sql.Named("status", status),
-		sql.Named("number", number))
+	// реализуйте обновление статуса в таблице parcel
+	_, err := s.db.Exec("UPDATE parcel SET status = ? WHERE number = ?", status, number)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func (s ParcelStore) SetAddress(number int, address string) error {
-	_, err := s.db.Exec("UPDATE parcel SET address = :address WHERE number = :number AND status = :status",
-		sql.Named("address", address),
-		sql.Named("number", number),
-		sql.Named("status", ParcelStatusRegistered))
-
-	return err
+	// реализуйте обновление адреса в таблице parcel
+	// менять адрес можно только если значение статуса registered
+	_, err := s.db.Exec("UPDATE parcel SET address = ? WHERE number = ? AND status = 'registered'", address, number)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s ParcelStore) Delete(number int) error {
-	_, err := s.db.Exec("DELETE FROM parcel WHERE number = :number AND status = :status",
-		sql.Named("number", number),
-		sql.Named("status", ParcelStatusRegistered))
-
-	return err
+	// реализуйте удаление строки из таблицы parcel
+	// удалять строку можно только если значение статуса registered
+	_, err := s.db.Exec("DELETE FROM parcel WHERE number = ? AND status = 'registered'", number)
+	if err != nil {
+		return err
+	}
+	return nil
 }
