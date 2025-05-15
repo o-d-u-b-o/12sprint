@@ -23,11 +23,11 @@ type Parcel struct {
 }
 
 type ParcelService struct {
-	store ParcelStore
+	store *ParcelStore
 }
 
-func NewParcelService(store ParcelStore) ParcelService {
-	return ParcelService{store: store}
+func NewParcelService(store *ParcelStore) *ParcelService {
+	return &ParcelService{store: store}
 }
 
 func (s ParcelService) Register(client int, address string) (Parcel, error) {
@@ -102,9 +102,9 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	defer db.Close() // настройте подключение к БД
+	defer db.Close()
 
-	store := NewParcelStore(db) // создайте объект ParcelStore функцией NewParcelStore
+	store := NewParcelStore(db) // теперь возвращает *ParcelStore
 	service := NewParcelService(store)
 
 	// регистрация посылки
